@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: myapp
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      target: dev
+    ports:
+      - "${PORT:-3001}:${PORT:-3001}"
+      - "${WS_PORT:-3002}:${WS_PORT:-3002}"
+    environment:
+      PORT: "${PORT:-3001}"
+      DATABASE_URL: "postgres://postgres:postgres@postgres:5432/myapp"
+      WS_PORT: "${WS_PORT:-3002}"
+      ENABLE_REALTIME: "${ENABLE_REALTIME:-false}"
+      ENABLE_ERRORPING: "${ENABLE_ERRORPING:-false}"
+      ERRORPING_BOT_TOKEN: "${ERRORPING_BOT_TOKEN:-}"
+      ERRORPING_CHAT_ID: "${ERRORPING_CHAT_ID:-}"
+      ERRORPING_API_KEY: "${ERRORPING_API_KEY:-}"
+      CORS_ORIGIN: "${CORS_ORIGIN:-*}"
+    volumes:
+      - ./src:/app/src
+      - ./migrations:/app/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
