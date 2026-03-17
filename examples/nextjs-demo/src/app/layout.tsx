@@ -34,6 +34,12 @@ export default function RootLayout({
             >
               Rate Limit
             </a>
+            <a
+              href="/errorping"
+              className="text-sm text-zinc-300 hover:text-white"
+            >
+              Errorping
+            </a>
           </nav>
           <main className="max-w-3xl mx-auto px-6 py-8">{children}</main>
         </Providers>

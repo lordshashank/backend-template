@@ -73,6 +73,10 @@ export default function Home() {
             <strong className="text-zinc-300">Rate Limit</strong> — fires rapid
             requests to see 429 responses
           </li>
+          <li>
+            <strong className="text-zinc-300">Errorping</strong> — trigger
+            errors and see them captured, stored, and sent to Telegram
+          </li>
         </ul>
       </div>
     </div>
