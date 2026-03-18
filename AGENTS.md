@@ -51,6 +51,7 @@ Numbered SQL files in `migrations/` (e.g., `002_users.sql`). Auto-run on startup
 
 - **Real-time**: `ENABLE_REALTIME=true` — starts WS server on `WS_PORT`, uses Postgres LISTEN/NOTIFY
 - **Errorping**: `ENABLE_ERRORPING=true` — error tracking routes with Telegram notifications
+- **Feedback**: `ENABLE_FEEDBACK=true` — user feedback forum (bug reports, feature requests) with admin management via bearer auth
 - **CORS**: `CORS_ORIGIN=*` — set allowed origin for cross-origin requests
 
 ### Auth strategies requiring extra packages

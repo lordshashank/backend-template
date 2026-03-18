@@ -30,6 +30,7 @@ Present all optional features:
 
 - **Real-time** — WebSocket invalidation via Postgres LISTEN/NOTIFY (`src/server/ws.ts`)
 - **Errorping** — error tracking with Telegram notifications (`src/app/routes/errorping.ts`)
+- **Feedback** — user feedback forum with voting, comments, admin management (`src/app/routes/feedback.ts`)
 - **Example routes** — messages CRUD + auth routes (`src/app/routes/messages.ts`, `src/app/routes/auth-routes.ts`)
 
 If user selects Errorping, follow up: **which errorping capabilities?**
@@ -68,6 +69,13 @@ If errorping storage-only (no telegram):
 - Remove Telegram formatting functions and `sendToTelegram` from `src/app/routes/errorping.ts`
 - Remove `ERRORPING_BOT_TOKEN` and `ERRORPING_CHAT_ID` from config, `.env`, `docker-compose.yml`
 
+If no feedback:
+- Delete `src/app/routes/feedback.ts`
+- Delete `migrations/004_feedback.sql`
+- Remove `ENABLE_FEEDBACK` block from `src/index.ts`
+- Remove feedback env vars from `.env` and `docker-compose.yml`
+- If bearer was only needed for feedback, also delete `src/auth/strategies/bearer.ts`
+
 If no example routes:
 - Delete `src/app/routes/messages.ts`
 - Delete `src/app/routes/auth-routes.ts`
@@ -84,6 +92,7 @@ Remove config fields for deleted features:
 - `wsPort` if no real-time
 - `errorpingBotToken`, `errorpingChatId` if no errorping-telegram
 - `errorpingApiKey` if no errorping-storage
+- `feedbackAdminKey` if no feedback
 
 ### 7. Update .env and docker-compose.yml
 

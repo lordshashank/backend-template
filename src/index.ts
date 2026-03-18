@@ -56,6 +56,19 @@ async function main() {
     })) router.addRoute(route);
   }
 
+  // Feedback routes (set ENABLE_FEEDBACK=true to activate)
+  if (process.env.ENABLE_FEEDBACK === "true") {
+    const { createBearerStrategy } = await import("./auth/strategies/bearer.js");
+    if (config.feedbackAdminKey) {
+      auth.registerStrategy(createBearerStrategy(config.feedbackAdminKey));
+    }
+
+    const { createFeedbackRoutes } = await import("./app/routes/feedback.js");
+    for (const route of createFeedbackRoutes({
+      userAuth: { strategy: "cookie" },
+    })) router.addRoute(route);
+  }
+
   // HTTP server
   const server = createHttpServer({
     port: config.port,

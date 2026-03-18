@@ -1,3 +1,4 @@
+-- Infrastructure: required by cookie/SIWE session-based auth (src/auth/session.ts)
 CREATE TABLE IF NOT EXISTS sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id TEXT NOT NULL,

@@ -10,6 +10,7 @@ Minimal, production-ready Node.js backend template. Raw `node:http`, PostgreSQL,
 - **Rate limiting** — in-memory sliding window, per-route configurable
 - **Real-time** — WebSocket invalidation via Postgres LISTEN/NOTIFY (optional)
 - **Error tracking** — receive errors from frontends, store in Postgres, forward to Telegram (optional)
+- **Feedback forum** — users submit bugs/feature requests, vote, comment; admin manages status via bearer auth (optional)
 - **Docker Compose** — Postgres + app with hot reload, one command to start
 
 Zero external frameworks. ESM throughout. TypeScript strict mode.
@@ -44,6 +45,7 @@ Features that can be removed independently:
 | **Bearer auth** | `src/auth/strategies/bearer.ts` + its registration in `src/index.ts` |
 | **Real-time** | `src/server/ws.ts` + `ENABLE_REALTIME` block in `src/index.ts` |
 | **Errorping** | `src/app/routes/errorping.ts`, `migrations/003_error_events.sql` + `ENABLE_ERRORPING` block in `src/index.ts` |
+| **Feedback** | `src/app/routes/feedback.ts`, `migrations/004_feedback.sql` + `ENABLE_FEEDBACK` block in `src/index.ts` |
 | **Example routes** | `src/app/routes/messages.ts`, `src/app/routes/auth-routes.ts`, `migrations/002_messages.sql` |
 
 ## Request pipeline
@@ -168,6 +170,28 @@ ERRORPING_CHAT_ID=your_telegram_chat_id
 ERRORPING_API_KEY=your_secret_api_key
 ```
 
+### Feedback (user feedback forum)
+
+Set `ENABLE_FEEDBACK=true`. Lets authenticated users submit bug reports, feature requests, vote, and comment. Admin manages post status via bearer auth.
+
+| Route | Auth | Purpose |
+|---|---|---|
+| `POST /feedback` | User | Create a feedback post (bug, feature, improvement, question) |
+| `GET /feedback` | User | List posts with filters (`?status`, `?type`, `?sort=votes\|recent`, `?page`, `?limit`) |
+| `GET /feedback/:id` | User | Get post with comments |
+| `POST /feedback/:id/vote` | User | Toggle upvote |
+| `POST /feedback/:id/comments` | User / Bearer | Add comment (`is_admin=true` for bearer) |
+| `DELETE /feedback/:id` | User / Bearer | Delete own post (user) or any post (admin) |
+| `DELETE /feedback/:id/comments/:commentId` | User / Bearer | Delete own comment (user) or any comment (admin) |
+| `PATCH /feedback/:id/status` | Bearer | Update status, priority, admin_note, duplicate_of |
+
+Environment variables:
+
+```
+ENABLE_FEEDBACK=true
+FEEDBACK_ADMIN_KEY=your_secret_admin_key
+```
+
 ## Environment variables
 
 | Variable | Required | Default | Description |
@@ -181,6 +205,8 @@ ERRORPING_API_KEY=your_secret_api_key
 | `ERRORPING_BOT_TOKEN` | No | — | Telegram bot token |
 | `ERRORPING_CHAT_ID` | No | — | Telegram chat ID |
 | `ERRORPING_API_KEY` | No | — | Bearer token for errorping query endpoints |
+| `ENABLE_FEEDBACK` | No | false | Enable feedback forum routes |
+| `FEEDBACK_ADMIN_KEY` | No | — | Bearer token for feedback admin endpoints |
 
 ## Project structure
 

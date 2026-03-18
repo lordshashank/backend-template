@@ -1,3 +1,4 @@
+-- Optional: errorping error tracking (ENABLE_ERRORPING=true)
 CREATE TABLE IF NOT EXISTS error_events (
   id            UUID PRIMARY KEY,
   timestamp     TIMESTAMPTZ NOT NULL,
