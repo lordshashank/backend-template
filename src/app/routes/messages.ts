@@ -15,7 +15,7 @@ export const messageRoutes: RouteConfig[] = [
   {
     method: "POST",
     path: "/messages",
-    auth: { strategy: "cookie" },
+    auth: [{ strategy: "cookie" }, { strategy: "jwt" }],
     rateLimit: { windowMs: 60_000, max: 20 },
     handler: async (ctx) => {
       const text = ctx.body.text as string | undefined;

@@ -56,7 +56,8 @@ Numbered SQL files in `migrations/` (e.g., `002_users.sql`). Auto-run on startup
 
 ### Auth strategies requiring extra packages
 
-- **SIWE** (`src/auth/strategies/siwe.ts`): requires `npm install siwe ethers`
+- **SIWE** (`src/auth/strategies/siwe.ts`): uses `siwe` + `ethers` (pre-installed, remove if unused)
+- **JWT** (`src/auth/strategies/jwt.ts`): uses `jsonwebtoken` (pre-installed, remove if unused)
 - Cookie, Bearer: no extra packages needed
 
 ### Agent skills

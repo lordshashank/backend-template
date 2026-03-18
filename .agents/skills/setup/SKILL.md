@@ -21,8 +21,16 @@ Ask the user for:
 Present all available strategies and ask the user to pick which ones they need:
 
 - **Cookie** — session-based auth (`src/auth/strategies/cookie.ts`)
-- **SIWE** — Sign-In With Ethereum (`src/auth/strategies/siwe.ts`, requires `npm install siwe ethers`)
+- **SIWE** — Sign-In With Ethereum (`src/auth/strategies/siwe.ts`)
+- **JWT** — stateless token auth (`src/auth/strategies/jwt.ts`) — requires `JWT_SECRET` env var
 - **Bearer** — static API key auth (`src/auth/strategies/bearer.ts`)
+- **Custom / None of the above** — user will implement their own strategy later
+
+If the user picks custom/none: delete all strategy files from `src/auth/strategies/`, delete `src/auth/session.ts`, delete `migrations/001_sessions.sql`, and leave a stub comment in `src/index.ts` showing where to register their strategy:
+```ts
+// Register your auth strategy here:
+// auth.registerStrategy(createMyStrategy());
+```
 
 ### 3. Ask which features to keep
 
@@ -40,12 +48,10 @@ If user selects Errorping, follow up: **which errorping capabilities?**
 
 ### 4. Remove unselected features
 
-For each unselected auth strategy, delete its file from `src/auth/strategies/`.
+For each unselected auth strategy, delete its file from `src/auth/strategies/` and clean up all references — registration in `src/index.ts`, config fields in `src/config.ts`, env vars in `.env`/`.env.example`/`docker-compose.yml`, or any other thing you find related to unselected things.
 
-If no cookie AND no siwe selected:
+If no cookie AND no siwe (no session-based auth at all):
 - Delete `src/auth/session.ts`
-
-If no auth strategies at all:
 - Delete `migrations/001_sessions.sql`
 
 If no real-time:
@@ -82,41 +88,71 @@ If no example routes:
 - Delete `migrations/002_messages.sql`
 - Remove their registration from `src/index.ts`
 
-### 5. Update src/index.ts
+### 5. Renumber remaining migrations
+
+After deleting unused migration files, renumber the remaining ones sequentially starting from `001_`. For example, if the user only keeps feedback, rename `004_feedback.sql` to `001_feedback.sql`. Migrations run in alphabetical order — gaps in numbering work but clean numbering is preferred.
+
+### 6. Update src/index.ts
 
 Remove imports and registration blocks for all deleted features. Only keep imports and code for selected features.
 
-### 6. Update src/config.ts
+### 7. Update src/config.ts
 
 Remove config fields for deleted features:
 - `wsPort` if no real-time
 - `errorpingBotToken`, `errorpingChatId` if no errorping-telegram
 - `errorpingApiKey` if no errorping-storage
 - `feedbackAdminKey` if no feedback
+- Add `jwtSecret` if JWT selected
 
-### 7. Update .env and docker-compose.yml
+### 8. Update .env and docker-compose.yml
 
 - Set project-specific database name
 - Remove env vars for deleted features
+- Add `JWT_SECRET` if JWT selected
 - Keep only what's needed
 
-### 8. Update package.json
+### 9. Update package.json
 
 - Set project name
-- Remove `ws` and `@types/ws` from dependencies if no real-time
-- Add `siwe` and `ethers` if SIWE selected
+- Remove `ws` and `@types/ws` if no real-time
+- Remove `siwe` and `ethers` if no SIWE
+- Remove `jsonwebtoken` and `@types/jsonwebtoken` if no JWT
 
-### 9. Clean up
+### 10. Clean up
 
 - Delete `ARCHITECTURE.md` if it exists
 - Delete `examples/` directory if it exists
 - Run `npm install`
 - Run `npx tsc --noEmit` to verify everything compiles
 
-### 10. Confirm
+### 11. Confirm and guide next steps
 
-Tell the user what was kept, what was removed, and how to start:
-```
-docker compose up
-curl http://localhost:<port>/health
-```
+**Note to agent:** The next steps below are a guide. Use your judgement — if you notice something relevant to the user's choices that isn't listed here (e.g. a dependency conflict, a better migration order, additional cleanup, relevant warnings), go ahead and include it.
+
+Tell the user what was kept, what was removed, and then provide a **Next steps** checklist tailored to their choices:
+
+**Always:**
+- [ ] Review and set env vars in `.env` (database name, ports, API keys, secrets)
+- [ ] Start the app: `docker compose up`
+- [ ] Verify: `curl http://localhost:<port>/health`
+- [ ] Create your DB schema — add migration files in `migrations/` for your app's tables (e.g. `001_users.sql`, `002_products.sql`)
+- [ ] Add your routes in `src/app/routes/` and register them in `src/index.ts`
+
+**If custom auth selected:**
+- [ ] Implement your auth strategy in `src/auth/strategies/` — it must export a function returning `{ name, authenticate(req, body) }` (see `AuthStrategy` in `src/auth/types.ts`)
+- [ ] Register it in `src/index.ts` where the stub comment is
+- [ ] If your strategy needs sessions, create a sessions migration and use the `SessionStore` from `src/auth/session.ts`
+
+**If JWT selected:**
+- [ ] Set `JWT_SECRET` in `.env` — use a strong random string (e.g. `openssl rand -hex 32`)
+- [ ] Create a login route that verifies credentials and returns a signed token using `signJwt()` from `src/auth/strategies/jwt.ts`
+
+**If cookie/SIWE selected:**
+- [ ] Replace the example login route (`src/app/routes/auth-routes.ts`) with your real authentication logic — the current one accepts any username without a password
+
+**If errorping selected:**
+- [ ] Set `ERRORPING_BOT_TOKEN` and `ERRORPING_CHAT_ID` for Telegram notifications, `ERRORPING_API_KEY` for query access
+
+**If feedback selected:**
+- [ ] Set `FEEDBACK_ADMIN_KEY` for admin operations (status updates, moderation)

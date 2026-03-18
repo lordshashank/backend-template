@@ -1,8 +1,15 @@
 import type { RouteConfig } from "../../server/router.js";
 import type { SessionStore } from "../../auth/session.js";
 
-export function createAuthRoutes(sessionStore: SessionStore): RouteConfig[] {
-  return [
+export function createAuthRoutes(
+  sessionStore: SessionStore,
+  options?: { jwtSecret?: string }
+): RouteConfig[] {
+  const meAuth = options?.jwtSecret
+    ? [{ strategy: "cookie" }, { strategy: "jwt" }]
+    : [{ strategy: "cookie" }];
+
+  const routes: RouteConfig[] = [
     {
       method: "POST",
       path: "/auth/login",
@@ -45,7 +52,7 @@ export function createAuthRoutes(sessionStore: SessionStore): RouteConfig[] {
     {
       method: "GET",
       path: "/auth/me",
-      auth: { strategy: "cookie" },
+      auth: meAuth,
       handler: async (ctx) => {
         return {
           status: 200,
@@ -54,4 +61,32 @@ export function createAuthRoutes(sessionStore: SessionStore): RouteConfig[] {
       },
     },
   ];
+
+  // JWT login (only when JWT_SECRET is set)
+  if (options?.jwtSecret) {
+    routes.push({
+      method: "POST",
+      path: "/auth/jwt/login",
+      auth: "public",
+      handler: async (ctx) => {
+        const username = ctx.body.username as string | undefined;
+        if (!username || username.trim().length === 0) {
+          return { status: 400, json: { error: "username is required" } };
+        }
+
+        const { signJwt } = await import("../../auth/strategies/jwt.js");
+        const token = signJwt(
+          { userId: username.trim() },
+          options.jwtSecret!
+        );
+
+        return {
+          status: 200,
+          json: { userId: username.trim(), token },
+        };
+      },
+    });
+  }
+
+  return routes;
 }

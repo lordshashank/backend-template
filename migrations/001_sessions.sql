@@ -1,4 +1,4 @@
--- Infrastructure: required by cookie/SIWE session-based auth (src/auth/session.ts)
+-- Optional: required by cookie/SIWE session-based auth (src/auth/session.ts) — not needed for JWT or bearer-only
 CREATE TABLE IF NOT EXISTS sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id TEXT NOT NULL,

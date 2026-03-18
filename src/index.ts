@@ -27,6 +27,12 @@ async function main() {
   const auth = createAuthMiddleware();
   auth.registerStrategy(createCookieStrategy(sessionStore));
 
+  // JWT auth (set JWT_SECRET to activate)
+  if (config.jwtSecret) {
+    const { createJwtStrategy } = await import("./auth/strategies/jwt.js");
+    auth.registerStrategy(createJwtStrategy(config.jwtSecret));
+  }
+
   // Rate limiting
   const rateLimiter = createRateLimiter();
 
@@ -40,7 +46,7 @@ async function main() {
   const router = createRouter();
   router.addRoute(healthRoute);
   for (const route of messageRoutes) router.addRoute(route);
-  for (const route of createAuthRoutes(sessionStore)) router.addRoute(route);
+  for (const route of createAuthRoutes(sessionStore, { jwtSecret: config.jwtSecret })) router.addRoute(route);
 
   // Errorping routes (set ENABLE_ERRORPING=true to activate)
   if (process.env.ENABLE_ERRORPING === "true") {

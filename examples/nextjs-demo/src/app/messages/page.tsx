@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, setJwtToken, getJwtToken } from "@/lib/api";
 import { useRealtimeQuery } from "@/lib/use-realtime-query";
 
 interface Message {
@@ -17,10 +17,13 @@ interface User {
   strategy: string;
 }
 
+type AuthMode = "cookie" | "jwt";
+
 export default function MessagesPage() {
   const queryClient = useQueryClient();
   const [username, setUsername] = useState("");
   const [messageText, setMessageText] = useState("");
+  const [authMode, setAuthMode] = useState<AuthMode>("cookie");
 
   // Auth state
   const me = useQuery({
@@ -36,8 +39,8 @@ export default function MessagesPage() {
     api<Message[]>("/messages")
   );
 
-  // Login
-  const login = useMutation({
+  // Cookie login
+  const cookieLogin = useMutation({
     mutationFn: (name: string) =>
       api("/auth/login", {
         method: "POST",
@@ -49,11 +52,35 @@ export default function MessagesPage() {
     },
   });
 
+  // JWT login
+  const jwtLogin = useMutation({
+    mutationFn: (name: string) =>
+      api<{ userId: string; token: string }>("/auth/jwt/login", {
+        method: "POST",
+        body: JSON.stringify({ username: name }),
+      }),
+    onSuccess: (data) => {
+      setJwtToken(data.token);
+      queryClient.invalidateQueries({ queryKey: ["auth"] });
+      setUsername("");
+    },
+  });
+
+  const login = authMode === "cookie" ? cookieLogin : jwtLogin;
+
   // Logout
   const logout = useMutation({
-    mutationFn: () => api("/auth/logout", { method: "POST" }),
+    mutationFn: async () => {
+      if (getJwtToken()) {
+        // JWT: just clear the token client-side
+        setJwtToken(null);
+      } else {
+        // Cookie: hit the logout endpoint
+        await api("/auth/logout", { method: "POST" });
+      }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["auth"] });
+      queryClient.resetQueries({ queryKey: ["auth"] });
     },
   });
 
@@ -70,9 +97,43 @@ export default function MessagesPage() {
     },
   });
 
+  const handleSwitchMode = (mode: AuthMode) => {
+    if (isLoggedIn) {
+      logout.mutate();
+    }
+    setJwtToken(null);
+    setAuthMode(mode);
+    queryClient.resetQueries({ queryKey: ["auth"] });
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Messages</h1>
+
+      {/* Auth mode toggle */}
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xs text-zinc-500 uppercase tracking-wide">Auth mode:</span>
+        <button
+          onClick={() => handleSwitchMode("cookie")}
+          className={`text-xs px-3 py-1 rounded ${
+            authMode === "cookie"
+              ? "bg-blue-600 text-white"
+              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+          }`}
+        >
+          Cookie
+        </button>
+        <button
+          onClick={() => handleSwitchMode("jwt")}
+          className={`text-xs px-3 py-1 rounded ${
+            authMode === "jwt"
+              ? "bg-blue-600 text-white"
+              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+          }`}
+        >
+          JWT
+        </button>
+      </div>
 
       {/* Auth section */}
       <div className="rounded-lg border border-zinc-800 p-4 mb-6">
@@ -81,6 +142,9 @@ export default function MessagesPage() {
             <span className="text-sm text-zinc-400">
               Logged in as{" "}
               <strong className="text-zinc-200">{me.data.userId}</strong>
+              <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500">
+                {me.data.strategy}
+              </span>
             </span>
             <button
               onClick={() => logout.mutate()}
@@ -109,7 +173,7 @@ export default function MessagesPage() {
               disabled={login.isPending}
               className="text-sm px-4 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50"
             >
-              Login
+              Login ({authMode === "cookie" ? "Cookie" : "JWT"})
             </button>
           </form>
         )}

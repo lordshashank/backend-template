@@ -40,6 +40,7 @@ Features that can be removed independently:
 | Feature | What to remove |
 |---|---|
 | **SIWE auth** | `src/auth/strategies/siwe.ts` + its registration in `src/index.ts` |
+| **JWT auth** | `src/auth/strategies/jwt.ts` + its registration in `src/index.ts` |
 
 | **Cookie auth** | `src/auth/strategies/cookie.ts`, `src/auth/session.ts`, `migrations/001_sessions.sql` |
 | **Bearer auth** | `src/auth/strategies/bearer.ts` + its registration in `src/index.ts` |
@@ -128,7 +129,8 @@ Auto-run on startup. Each runs in a transaction. Tracked in a `_migrations` tabl
 | Strategy | How it works |
 |---|---|
 | **Cookie** | Session-based. `POST /auth/login` creates a session, sets `session` cookie. Sessions stored in Postgres. |
-| **SIWE** | Sign-In With Ethereum. Verifies signed message, creates session. Requires `npm install siwe ethers`. |
+| **SIWE** | Sign-In With Ethereum. Verifies signed message, creates session. Uses `siwe` + `ethers` packages. |
+| **JWT** | Stateless token auth via `Authorization: Bearer <token>`. Verifies signature + expiry, no DB lookup. Uses `jsonwebtoken` package. |
 | **Bearer** | Static token via `Authorization: Bearer <token>` header. Good for API keys, CLI access, service-to-service. |
 
 ## Optional features
@@ -205,6 +207,7 @@ FEEDBACK_ADMIN_KEY=your_secret_admin_key
 | `ERRORPING_BOT_TOKEN` | No | — | Telegram bot token |
 | `ERRORPING_CHAT_ID` | No | — | Telegram chat ID |
 | `ERRORPING_API_KEY` | No | — | Bearer token for errorping query endpoints |
+| `JWT_SECRET` | No | — | Secret key for JWT auth (enables JWT strategy when set) |
 | `ENABLE_FEEDBACK` | No | false | Enable feedback forum routes |
 | `FEEDBACK_ADMIN_KEY` | No | — | Bearer token for feedback admin endpoints |
 

@@ -5,6 +5,7 @@ export interface Config {
   errorpingBotToken?: string;
   errorpingChatId?: string;
   errorpingApiKey?: string;
+  jwtSecret?: string;
   feedbackAdminKey?: string;
 }
 
@@ -21,6 +22,7 @@ export function loadConfig(): Config {
     errorpingBotToken: process.env.ERRORPING_BOT_TOKEN || undefined,
     errorpingChatId: process.env.ERRORPING_CHAT_ID || undefined,
     errorpingApiKey: process.env.ERRORPING_API_KEY || undefined,
+    jwtSecret: process.env.JWT_SECRET || undefined,
     feedbackAdminKey: process.env.FEEDBACK_ADMIN_KEY || undefined,
   };
 }
