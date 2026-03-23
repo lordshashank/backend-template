@@ -10,6 +10,7 @@ Minimal, production-ready Node.js backend template. Raw `node:http`, PostgreSQL,
 - **Rate limiting** — in-memory sliding window, per-route configurable
 - **Real-time** — WebSocket invalidation via Postgres LISTEN/NOTIFY (optional)
 - **Error tracking** — receive errors from frontends, store in Postgres, forward to Telegram (optional)
+- **File storage** — S3-compatible uploads (Cloudflare R2, AWS S3, MinIO) via presigned URLs (optional)
 - **Feedback forum** — users submit bugs/feature requests, vote, comment; admin manages status via bearer auth (optional)
 - **Docker Compose** — Postgres + app with hot reload, one command to start
 
@@ -47,6 +48,7 @@ Features that can be removed independently:
 | **Real-time** | `src/server/ws.ts` + `ENABLE_REALTIME` block in `src/index.ts` |
 | **Errorping** | `src/app/routes/errorping.ts`, `migrations/003_error_events.sql` + `ENABLE_ERRORPING` block in `src/index.ts` |
 | **Feedback** | `src/app/routes/feedback.ts`, `migrations/004_feedback.sql` + `ENABLE_FEEDBACK` block in `src/index.ts` |
+| **Storage** | `src/storage/`, `src/app/routes/uploads.ts`, `migrations/005_uploads.sql` + `ENABLE_STORAGE` block in `src/index.ts` |
 | **Example routes** | `src/app/routes/messages.ts`, `src/app/routes/auth-routes.ts`, `migrations/002_messages.sql` |
 
 ## Request pipeline
@@ -96,6 +98,7 @@ Every handler receives:
 | `db` | `DbAdapter` | `query()` and `transaction()` |
 | `auth` | `AuthContext` | Authenticated user info |
 | `changes` | `ChangeNotifier` | Real-time invalidation (or no-op) |
+| `storage` | `StorageAdapter` | File storage — presigned URLs (or no-op) |
 
 ### Auth options
 
@@ -194,6 +197,41 @@ ENABLE_FEEDBACK=true
 FEEDBACK_ADMIN_KEY=your_secret_admin_key
 ```
 
+### Storage (file uploads)
+
+Set `ENABLE_STORAGE=true`. Provides routes for uploading and serving files via S3-compatible presigned URLs. The server never handles file bytes — clients upload directly to the storage backend.
+
+Upload lifecycle is two-phase:
+- `POST /uploads` prepares upload metadata and returns a presigned URL
+- client uploads directly to storage with `PUT`
+- `POST /uploads/:key/complete` verifies object exists and marks upload `completed`
+
+Upload records move through status values:
+- `pending` -> `completed` for successful uploads
+- `deleting` when object deletion fails;
+
+Works with Cloudflare R2, AWS S3, MinIO, or any S3-compatible service.
+
+| Route | Auth | Purpose |
+|---|---|---|
+| `GET /uploads` | User | List own uploads |
+| `POST /uploads` | User | Request presigned upload URL. Body: `{ contentType, filename, fileSize }` |
+| `POST /uploads/:key/complete` | User | Finalize upload after successful client `PUT` |
+| `GET /uploads/:key` | User | Get presigned download URL |
+| `DELETE /uploads/:key` | User | Delete own upload; may return `{ ok: true, deleting: true }` on storage delete failure |
+
+Environment variables:
+
+```
+ENABLE_STORAGE=true
+S3_BUCKET=my-bucket
+S3_REGION=auto
+S3_ENDPOINT=https://your-account.r2.cloudflarestorage.com
+S3_ACCESS_KEY_ID=your_access_key
+S3_SECRET_ACCESS_KEY=your_secret_key
+UPLOAD_MAX_SIZE=10485760    # optional, default 10MB
+```
+
 ## Environment variables
 
 | Variable | Required | Default | Description |
@@ -210,6 +248,13 @@ FEEDBACK_ADMIN_KEY=your_secret_admin_key
 | `JWT_SECRET` | No | — | Secret key for JWT auth (enables JWT strategy when set) |
 | `ENABLE_FEEDBACK` | No | false | Enable feedback forum routes |
 | `FEEDBACK_ADMIN_KEY` | No | — | Bearer token for feedback admin endpoints |
+| `ENABLE_STORAGE` | No | false | Enable file upload routes |
+| `S3_BUCKET` | No | — | S3 bucket name (required if storage enabled) |
+| `S3_REGION` | No | — | S3 region (use `auto` for R2) |
+| `S3_ENDPOINT` | No | — | S3 endpoint URL (required for R2/MinIO) |
+| `S3_ACCESS_KEY_ID` | No | — | S3 access key |
+| `S3_SECRET_ACCESS_KEY` | No | — | S3 secret key |
+| `UPLOAD_MAX_SIZE` | No | 10485760 | Max upload size in bytes (default 10MB) |
 
 ## Project structure
 
@@ -220,6 +265,7 @@ src/
   app/routes/               # Your routes go here
   auth/                     # Auth middleware + strategies
   db/                       # Postgres adapter, migrations, change notifier
+  storage/                  # S3-compatible storage adapter
   server/                   # HTTP server, router, WebSocket
   rate-limit/               # Sliding window rate limiter
 migrations/                 # Numbered SQL migration files

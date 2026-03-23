@@ -5,7 +5,7 @@ description: Interactive project setup after cloning the backend-template. Use w
 
 # Setup
 
-Interactive setup for a freshly cloned backend-template. Ask the user what they need, then remove everything else.
+Interactive setup for a freshly cloned backend-template. Ask the user what they need, then remove everything else. Following are just guidelines, use your judgement to remove less or more if needed.
 
 ## Procedure
 
@@ -39,6 +39,7 @@ Present all optional features:
 - **Real-time** — WebSocket invalidation via Postgres LISTEN/NOTIFY (`src/server/ws.ts`)
 - **Errorping** — error tracking with Telegram notifications (`src/app/routes/errorping.ts`)
 - **Feedback** — user feedback forum with voting, comments, admin management (`src/app/routes/feedback.ts`)
+- **Storage** — S3-compatible file uploads via presigned URLs, works with Cloudflare R2, AWS S3, MinIO (`src/storage/`, `src/app/routes/uploads.ts`)
 - **Example routes** — messages CRUD + auth routes (`src/app/routes/messages.ts`, `src/app/routes/auth-routes.ts`)
 
 If user selects Errorping, follow up: **which errorping capabilities?**
@@ -82,6 +83,20 @@ If no feedback:
 - Remove feedback env vars from `.env` and `docker-compose.yml`
 - If bearer was only needed for feedback, also delete `src/auth/strategies/bearer.ts`
 
+If no storage:
+- Delete `src/storage/s3.ts`
+- Delete `src/storage/types.ts` (only if no other code imports it)
+- Delete `src/app/routes/uploads.ts`
+- Delete `migrations/005_uploads.sql`
+- Remove `ENABLE_STORAGE` block from `src/index.ts`
+- Remove `createNoopStorage` import from `src/index.ts`
+- Remove storage-related config fields from `src/config.ts` (`s3Bucket`, `s3Region`, `s3Endpoint`, `s3AccessKeyId`, `s3SecretAccessKey`, `uploadMaxSize`) and their env loading
+- Remove `storage` from `HandlerContext` in `src/server/router.ts` and its import
+- Remove `storage` from `HttpServerOptions` and handler context in `src/server/http.ts` and its import
+- Remove S3 env vars from `.env` and `docker-compose.yml`
+- Remove `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner` from `package.json`
+- Delete `src/storage/noop.ts` and `tests/storage-noop.test.ts` and `tests/uploads.test.ts`
+
 If no example routes:
 - Delete `src/app/routes/messages.ts`
 - Delete `src/app/routes/auth-routes.ts`
@@ -103,6 +118,7 @@ Remove config fields for deleted features:
 - `errorpingBotToken`, `errorpingChatId` if no errorping-telegram
 - `errorpingApiKey` if no errorping-storage
 - `feedbackAdminKey` if no feedback
+- `s3Bucket`, `s3Region`, `s3Endpoint`, `s3AccessKeyId`, `s3SecretAccessKey`, `uploadMaxSize` if no storage
 - Add `jwtSecret` if JWT selected
 
 ### 8. Update .env and docker-compose.yml
@@ -118,6 +134,7 @@ Remove config fields for deleted features:
 - Remove `ws` and `@types/ws` if no real-time
 - Remove `siwe` and `ethers` if no SIWE
 - Remove `jsonwebtoken` and `@types/jsonwebtoken` if no JWT
+- Remove `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner` if no storage
 
 ### 10. Clean up
 
@@ -156,3 +173,11 @@ Tell the user what was kept, what was removed, and then provide a **Next steps**
 
 **If feedback selected:**
 - [ ] Set `FEEDBACK_ADMIN_KEY` for admin operations (status updates, moderation)
+
+**If storage selected:**
+- [ ] Set `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` in `.env`
+- [ ] Set `S3_ENDPOINT` if using Cloudflare R2 or MinIO (not needed for AWS S3)
+- [ ] Optionally set `UPLOAD_MAX_SIZE` (default 10MB)
+- [ ] Configure bucket CORS for browser `PUT` uploads from your frontend origin (e.g. localhost)
+- [ ] Upload routes require auth — configure which auth strategy to use in the `ENABLE_STORAGE` block of `src/index.ts`
+- [ ] Upload flow is 2-phase: `POST /uploads` -> client `PUT` to storage -> `POST /uploads/:key/complete`

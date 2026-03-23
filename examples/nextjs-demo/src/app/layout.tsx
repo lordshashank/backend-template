@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Providers } from "@/lib/providers";
 import "./globals.css";
 
@@ -19,27 +20,33 @@ export default function RootLayout({
             <span className="text-sm font-semibold text-zinc-400 tracking-wide uppercase">
               Demo
             </span>
-            <a href="/" className="text-sm text-zinc-300 hover:text-white">
+            <Link href="/" className="text-sm text-zinc-300 hover:text-white">
               Health
-            </a>
-            <a
+            </Link>
+            <Link
               href="/messages"
               className="text-sm text-zinc-300 hover:text-white"
             >
               Messages
-            </a>
-            <a
+            </Link>
+            <Link
               href="/rate-limit"
               className="text-sm text-zinc-300 hover:text-white"
             >
               Rate Limit
-            </a>
-            <a
+            </Link>
+            <Link
+              href="/uploads"
+              className="text-sm text-zinc-300 hover:text-white"
+            >
+              Uploads
+            </Link>
+            <Link
               href="/errorping"
               className="text-sm text-zinc-300 hover:text-white"
             >
               Errorping
-            </a>
+            </Link>
           </nav>
           <main className="max-w-3xl mx-auto px-6 py-8">{children}</main>
         </Providers>

@@ -9,6 +9,7 @@ import {
   createNoopChangeNotifier,
   createPostgresChangeNotifier,
 } from "./db/changes.js";
+import { createNoopStorage } from "./storage/noop.js";
 import { createRouter } from "./server/router.js";
 import { createHttpServer } from "./server/http.js";
 import { healthRoute } from "./app/routes/health.js";
@@ -42,6 +43,21 @@ async function main() {
       ? await createPostgresChangeNotifier(config.databaseUrl)
       : createNoopChangeNotifier();
 
+  // Storage (set ENABLE_STORAGE=true to activate)
+  let storage;
+  if (process.env.ENABLE_STORAGE === "true") {
+    const { createS3Storage } = await import("./storage/s3.js");
+    storage = createS3Storage({
+      s3Bucket: config.s3Bucket!,
+      s3Region: config.s3Region!,
+      s3Endpoint: config.s3Endpoint,
+      s3AccessKeyId: config.s3AccessKeyId!,
+      s3SecretAccessKey: config.s3SecretAccessKey!,
+    });
+  } else {
+    storage = createNoopStorage();
+  }
+
   // Router
   const router = createRouter();
   router.addRoute(healthRoute);
@@ -59,6 +75,15 @@ async function main() {
     for (const route of createErrorpingRoutes({
       botToken: config.errorpingBotToken!,
       chatId: config.errorpingChatId!,
+    })) router.addRoute(route);
+  }
+
+  // Upload routes (set ENABLE_STORAGE=true to activate)
+  if (process.env.ENABLE_STORAGE === "true") {
+    const { createUploadRoutes } = await import("./app/routes/uploads.js");
+    for (const route of createUploadRoutes({
+      auth: { strategy: "jwt" },
+      maxSizeBytes: config.uploadMaxSize,
     })) router.addRoute(route);
   }
 
@@ -83,6 +108,7 @@ async function main() {
     changes,
     auth,
     rateLimiter,
+    storage,
     corsOrigin: process.env.CORS_ORIGIN,
   });
 

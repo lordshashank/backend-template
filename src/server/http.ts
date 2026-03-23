@@ -5,6 +5,7 @@ import type { DbAdapter } from "../db/pool.js";
 import type { ChangeNotifier } from "../db/changes.js";
 import type { AuthMiddleware } from "../auth/middleware.js";
 import type { RateLimiter } from "../rate-limit/limiter.js";
+import type { StorageAdapter } from "../storage/types.js";
 
 export interface HttpServerOptions {
   port: number;
@@ -13,6 +14,7 @@ export interface HttpServerOptions {
   changes: ChangeNotifier;
   auth: AuthMiddleware;
   rateLimiter: RateLimiter;
+  storage: StorageAdapter;
   corsOrigin?: string;
 }
 
@@ -63,7 +65,7 @@ function getClientIp(req: IncomingMessage): string {
 }
 
 export function createHttpServer(options: HttpServerOptions): http.Server {
-  const { port, router, db, changes, auth, rateLimiter, corsOrigin } = options;
+  const { port, router, db, changes, auth, rateLimiter, storage, corsOrigin } = options;
 
   const server = http.createServer(async (req, res) => {
     // CORS
@@ -146,6 +148,7 @@ export function createHttpServer(options: HttpServerOptions): http.Server {
         db,
         auth: authResult ?? { userId: "", strategy: "public" },
         changes,
+        storage,
       });
 
       sendJson(res, result.status, result.json, result.headers);

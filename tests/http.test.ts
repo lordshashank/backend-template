@@ -6,6 +6,7 @@ import { createHttpServer } from "../src/server/http.js";
 import { createAuthMiddleware } from "../src/auth/middleware.js";
 import { createRateLimiter } from "../src/rate-limit/limiter.js";
 import { createNoopChangeNotifier } from "../src/db/changes.js";
+import { createNoopStorage } from "../src/storage/noop.js";
 import type { DbAdapter } from "../src/db/pool.js";
 
 const TEST_PORT = 9876;
@@ -79,6 +80,7 @@ describe("HTTP Server", () => {
       changes: createNoopChangeNotifier(),
       auth: createAuthMiddleware(),
       rateLimiter: createRateLimiter(),
+      storage: createNoopStorage(),
     });
     await new Promise((r) => setTimeout(r, 50));
 
@@ -106,6 +108,7 @@ describe("HTTP Server", () => {
       changes: createNoopChangeNotifier(),
       auth: createAuthMiddleware(),
       rateLimiter: createRateLimiter(),
+      storage: createNoopStorage(),
     });
     await new Promise((r) => setTimeout(r, 50));
 
@@ -135,6 +138,7 @@ describe("HTTP Server", () => {
       changes: createNoopChangeNotifier(),
       auth: createAuthMiddleware(),
       rateLimiter: createRateLimiter(),
+      storage: createNoopStorage(),
     });
     await new Promise((r) => setTimeout(r, 50));
 
@@ -166,6 +170,7 @@ describe("HTTP Server", () => {
       changes: createNoopChangeNotifier(),
       auth: createAuthMiddleware(),
       rateLimiter: createRateLimiter(),
+      storage: createNoopStorage(),
     });
     await new Promise((r) => setTimeout(r, 50));
 
@@ -191,6 +196,7 @@ describe("HTTP Server", () => {
       changes: createNoopChangeNotifier(),
       auth: createAuthMiddleware(),
       rateLimiter: createRateLimiter(),
+      storage: createNoopStorage(),
     });
     await new Promise((r) => setTimeout(r, 50));
 
@@ -218,6 +224,7 @@ describe("HTTP Server", () => {
       changes: createNoopChangeNotifier(),
       auth: createAuthMiddleware(),
       rateLimiter: createRateLimiter(),
+      storage: createNoopStorage(),
     });
     await new Promise((r) => setTimeout(r, 50));
 
@@ -270,6 +277,7 @@ describe("HTTP Server", () => {
       changes: createNoopChangeNotifier(),
       auth: createAuthMiddleware(),
       rateLimiter: createRateLimiter(),
+      storage: createNoopStorage(),
     });
     await new Promise((r) => setTimeout(r, 50));
 
@@ -302,6 +310,7 @@ describe("HTTP Server", () => {
       changes: createNoopChangeNotifier(),
       auth: createAuthMiddleware(),
       rateLimiter: createRateLimiter(),
+      storage: createNoopStorage(),
     });
     await new Promise((r) => setTimeout(r, 50));
 
@@ -320,6 +329,7 @@ describe("HTTP Server", () => {
       changes: createNoopChangeNotifier(),
       auth: createAuthMiddleware(),
       rateLimiter: createRateLimiter(),
+      storage: createNoopStorage(),
       corsOrigin: "*",
     });
     await new Promise((r) => setTimeout(r, 50));
@@ -347,6 +357,7 @@ describe("HTTP Server", () => {
       changes: createNoopChangeNotifier(),
       auth: createAuthMiddleware(),
       rateLimiter: createRateLimiter(),
+      storage: createNoopStorage(),
     });
     await new Promise((r) => setTimeout(r, 50));
 

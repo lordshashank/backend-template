@@ -2,6 +2,7 @@ import type { IncomingMessage } from "node:http";
 import type { DbAdapter } from "../db/pool.js";
 import type { ChangeNotifier } from "../db/changes.js";
 import type { AuthContext, AuthRequirement } from "../auth/types.js";
+import type { StorageAdapter } from "../storage/types.js";
 
 export interface HandlerContext {
   req: IncomingMessage;
@@ -10,6 +11,7 @@ export interface HandlerContext {
   db: DbAdapter;
   auth: AuthContext;
   changes: ChangeNotifier;
+  storage: StorageAdapter;
 }
 
 export interface RouteResponse {

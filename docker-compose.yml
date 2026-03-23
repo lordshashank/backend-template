@@ -34,6 +34,12 @@ services:
       JWT_SECRET: "${JWT_SECRET:-}"
       ENABLE_FEEDBACK: "${ENABLE_FEEDBACK:-false}"
       FEEDBACK_ADMIN_KEY: "${FEEDBACK_ADMIN_KEY:-}"
+      ENABLE_STORAGE: "${ENABLE_STORAGE:-false}"
+      S3_BUCKET: "${S3_BUCKET:-}"
+      S3_REGION: "${S3_REGION:-}"
+      S3_ENDPOINT: "${S3_ENDPOINT:-}"
+      S3_ACCESS_KEY_ID: "${S3_ACCESS_KEY_ID:-}"
+      S3_SECRET_ACCESS_KEY: "${S3_SECRET_ACCESS_KEY:-}"
       CORS_ORIGIN: "${CORS_ORIGIN:-*}"
     volumes:
       - ./src:/app/src

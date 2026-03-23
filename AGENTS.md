@@ -29,10 +29,11 @@ Route match → rate limit (in-memory sliding window) → parse JSON body → va
 ### Key interfaces
 
 - **`RouteConfig`** (`src/server/router.ts`) — route definition: method, path (`:param` syntax), auth requirement, optional rate limit/validate, handler function
-- **`HandlerContext`** — injected into handlers: `req`, `params`, `body`, `db`, `auth`, `changes`
+- **`HandlerContext`** — injected into handlers: `req`, `params`, `body`, `db`, `auth`, `changes`, `storage`
 - **`DbAdapter`** (`src/db/pool.ts`) — `query()` + `transaction()`, no ORM, parameterized SQL only
 - **`AuthStrategy`** (`src/auth/types.ts`) — `name` + `authenticate()` returning `AuthContext | null`
 - **`ChangeNotifier`** (`src/db/changes.ts`) — `notify(resource, ...scope)` for real-time invalidation signals; Postgres LISTEN/NOTIFY or noop implementation
+- **`StorageAdapter`** (`src/storage/types.ts`) — `getSignedUploadUrl()`, `getSignedUrl()`, `exists()`, `delete()` for S3-compatible file storage; S3 or noop implementation
 - **`AuthRequirement`** — `"public"` | `{ strategy: string }` | `Array<{ strategy: string }>`
 
 ### Where app code lives
@@ -52,6 +53,7 @@ Numbered SQL files in `migrations/` (e.g., `002_users.sql`). Auto-run on startup
 - **Real-time**: `ENABLE_REALTIME=true` — starts WS server on `WS_PORT`, uses Postgres LISTEN/NOTIFY
 - **Errorping**: `ENABLE_ERRORPING=true` — error tracking routes with Telegram notifications
 - **Feedback**: `ENABLE_FEEDBACK=true` — user feedback forum (bug reports, feature requests) with admin management via bearer auth
+- **Storage**: `ENABLE_STORAGE=true` — S3-compatible file uploads (Cloudflare R2, AWS S3, MinIO) via a prepare -> direct upload -> complete flow with status lifecycle (`pending`, `completed`, `failed`, `deleting`). Requires `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, optional `S3_ENDPOINT` and `UPLOAD_MAX_SIZE`
 - **CORS**: `CORS_ORIGIN=*` — set allowed origin for cross-origin requests
 
 ### Auth strategies requiring extra packages
